@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pix2Text / OCR outputs
+output/
+results/
+tmp/
+
+# Large data / models (按需)
+*.onnx
+*.pth
+*.pt
