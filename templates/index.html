@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>图片公式识别</title>
+    <style>
+        /* 页面全局背景图，替换url即可 */
+        body {
+            font-family: Arial, sans-serif;
+            background: url('/static/b1.png') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.7); /* 半透明白色背景 */
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            padding: 30px 40px;
+            width: 80vw; /* 宽度80%视口宽度 */
+            max-width: 1000px; /* 最大宽度限制 */
+            height: 80vh; /* 高度80%视口高度 */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .top {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #image-preview {
+            border: 2px dashed #aaa;
+            border-radius: 10px;
+            padding: 20px;
+            color: #777;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            background-color: #fafafa;
+            margin-bottom: 10px;
+        }
+
+        #image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        input[type="file"] {
+            margin-top: 10px;
+        }
+
+        .bottom {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bottom h3 {
+            margin-bottom: 10px;
+        }
+
+        #result-text {
+            background: #ffffff; /* 纯白色背景 */
+            padding: 12px;
+            border-radius: 8px;
+            flex: 1;
+            overflow-y: auto;
+            font-size: 15px;
+            color: #333;
+            line-height: 1.5;
+            border: 1px solid #000000; /* 加一圈边框，看起来更像文本框 */
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* 内阴影微微立体效果 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>图片公式识别</h1>
+        <div class="top">
+            <div id="image-preview">粘贴、拖拽或上传图片后将在此显示</div>
+            <input type="file" id="file-input" accept="image/*">
+        </div>
+        <div class="bottom">
+            <h3>识别结果：</h3>
+            <pre id="result-text">（此处显示识别结果）</pre>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const imagePreview = document.getElementById('image-preview');
+        const resultText = document.getElementById('result-text');
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                uploadFile(fileInput.files[0]);
+                showPreview(fileInput.files[0]);
+            }
+        });
+
+        function showPreview(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            resultText.textContent = "识别中，请稍候...";
+
+            const response = await fetch('/recognize', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            resultText.textContent = data.result;
+        }
+
+        // 粘贴支持
+        document.addEventListener('paste', (event) => {
+            const items = (event.clipboardData || window.clipboardData).items;
+            for (const item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const file = item.getAsFile();
+                    uploadFile(file);
+                    showPreview(file);
+                }
+            }
+        });
+
+        // 拖拽支持
+        ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            imagePreview.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        imagePreview.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+                showPreview(files[0]);
+            }
+        });
+    </script>
+</body>
+</html>
